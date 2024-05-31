@@ -25226,34 +25226,48 @@ const data =  [
     }
   ]
 
+// Filter out entries without valid Latitude and Longitude
+const validData = data.filter(item => item.Latitude !== undefined && item.Longitude !== undefined);
 
-// Initialize the map and set its view to the first data point
-const map = L.map('map').setView([data[0].record.Latitude, data[0].record.Longitude], 13);
+// Initialize the map
+const map = L.map('map');
 
-// Add a tile layer to add to our map, in this case, it's a OSM tile layer.
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
+// Check if there are valid data points
+if (validData.length > 0) {
+    // Create a bounds object to include all valid data points
+    const bounds = L.latLngBounds(validData.map(item => [item.Latitude, item.Longitude]));
+    
+    // Fit the map to the bounds
+    map.fitBounds(bounds);
 
-// Add markers to the map
-data.forEach(item => {
-    const marker = L.marker([item.record.Latitude, item.record.Longitude]).addTo(map);
-    const popupContent = `
-        <table>
-            <tr><td>POTEAU ID</td><td>${item.record.POTEAU_ID_POT}</td></tr>
-            <tr><td>POSITION POP</td><td>${item.record.POSITION_POP}</td></tr>
-            <tr><td>PANNEAU ID PAN</td><td>${item.record.PANNEAU_ID_PAN}</td></tr>
-            <tr><td>PANNEAU ID RPA</td><td>${item.record.PANNEAU_ID_RPA}</td></tr>
-            <tr><td>DESCRIPTION RPA</td><td>${item.record.DESCRIPTION_RPA}</td></tr>
-            <tr><td>CODE RPA</td><td>${item.record.CODE_RPA}</td></tr>
-            <tr><td>FLECHE PAN</td><td>${item.record.FLECHE_PAN}</td></tr>
-            <tr><td>TOPONYME PAN</td><td>${item.record.TOPONYME_PAN}</td></tr>
-            <tr><td>DESCRIPTION CAT</td><td>${item.record.DESCRIPTION_CAT}</td></tr>
-            <tr><td>DATE CONCEPTION</td><td>${item.record.DATE_CONCEPTION_POT}</td></tr>
-            <tr><td>DESCRIPTION REP</td><td>${item.record.DESCRIPTION_REP}</td></tr>
-            <tr><td>DESCRIPTION RTP</td><td>${item.record.DESCRIPTION_RTP}</td></tr>
-            <tr><td>ARRONDISSEMENT</td><td>${item.record.NOM_ARROND}</td></tr>
-        </table>
-    `;
-    marker.bindPopup(popupContent);
-});
+    // Add a tile layer to the map
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Add markers to the map
+    validData.forEach(item => {
+        const marker = L.marker([item.Latitude, item.Longitude]).addTo(map);
+        const popupContent = `
+            <div class="popup-content">
+                <div class="popup-header">
+                    <img src="https://image.flaticon.com/icons/png/512/25/25694.png" alt="Home Icon" />
+                    <h3>${item.DESCRIPTION_RPA}</h3>
+                </div>
+                <table class="popup-table">
+                    <tr><td><i class="fas fa-map-marker-alt"></i> Latitude</td><td>${item.Latitude}</td></tr>
+                    <tr><td><i class="fas fa-map-marker-alt"></i> Longitude</td><td>${item.Longitude}</td></tr>
+                    <tr><td><i class="fas fa-globe"></i> Region</td><td>${item.NOM_ARROND}</td></tr>
+                    <tr><td><i class="fas fa-map-signs"></i> Position</td><td>${item.POSITION_POP}</td></tr>
+                    <tr><td><i class="fas fa-calendar-alt"></i> Date</td><td>${item.DATE_CONCEPTION_POT}</td></tr>
+                    <tr><td><i class="fas fa-info-circle"></i> Description</td><td>${item.DESCRIPTION_RTP}</td></tr>
+                </table>
+            </div>
+        `;
+        marker.bindPopup(popupContent);
+    });
+} else {
+    // Fallback if no valid data points are found
+    map.setView([0, 0], 2);  // Set to a default view, e.g., the whole world
+    console.error("No valid data points available.");
+}
